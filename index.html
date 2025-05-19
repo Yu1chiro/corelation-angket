@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analisis Kuisioner Bahasa Jepang</title>
+  <!-- Pindahkan Alpine.js setelah Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Replace with specific version of Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    .likert-bar {
+      height: 20px;
+      border-radius: 4px;
+    }
+    @media (max-width: 640px) {
+      .responsive-text {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-6" x-data="dashboard">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-md p-6 text-center">
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📊 Analisis Kuisioner Pembelajaran Bahasa Jepang</h1>
+      <p class="text-gray-600 mt-2">Hasil analisis dari 35 responden</p>
+      <div class="mt-4 flex flex-wrap justify-center gap-4">
+        <div class="bg-blue-50 text-blue-800 px-4 py-2 rounded-lg">
+          <span class="font-bold">Reliabilitas:</span> <span x-text="metadata.reliabilitas"></span> (Cronbach's Alpha)
+        </div>
+        <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg">
+          <span class="font-bold">Total Pertanyaan:</span> <span x-text="metadata.total_pertanyaan"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Jenis Pertanyaan -->
+    <div class="bg-white rounded-xl shadow-md p-4">
+      <div class="flex flex-wrap gap-2">
+        <button 
+          @click="filterJenis('semua')"
+          class="px-4 py-2 rounded-lg transition"
+          :class="{
+            'bg-blue-500 text-white': jenisFilter === 'semua',
+            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'semua'
+          }">
+          Semua
+        </button>
+        <button 
+          @click="filterJenis('likert')"
+          class="px-4 py-2 rounded-lg transition"
+          :class="{
+            'bg-blue-500 text-white': jenisFilter === 'likert',
+            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'likert'
+          }">
+          Skala Likert
+        </button>
+        <button 
+          @click="filterJenis('isian')"
+          class="px-4 py-2 rounded-lg transition"
+          :class="{
+            'bg-blue-500 text-white': jenisFilter === 'isian',
+            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'isian'
+          }">
+          Pertanyaan Isian
+        </button>
+      </div>
+    </div>
+
+    <!-- Grafik Utama -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Daftar Pertanyaan -->
+      <div class="bg-white rounded-xl shadow-md p-6 lg:col-span-1">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Daftar Pertanyaan</h2>
+        <div class="space-y-2 max-h-[500px] overflow-y-auto">
+          <template x-for="(item, index) in filteredAnalisis" :key="index">
+            <button 
+              @click="pilihPertanyaan(index)"
+              class="w-full text-left px-3 py-2 rounded-lg transition text-sm"
+              :class="{
+                'bg-blue-100 text-blue-800': pertanyaanAktifIndex === index && jenisFilter === 'semua',
+                'bg-green-100 text-green-800': pertanyaanAktifIndex === index && jenisFilter === 'likert',
+                'bg-purple-100 text-purple-800': pertanyaanAktifIndex === index && jenisFilter === 'isian',
+                'hover:bg-gray-100': pertanyaanAktifIndex !== index
+              }"
+              x-text="item.pertanyaan.substring(0, 70) + (item.pertanyaan.length > 70 ? '...' : '')">
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Grafik dan Statistik -->
+      <div class="bg-white rounded-xl shadow-md p-6 lg:col-span-2 space-y-6">
+        <template x-if="pertanyaanAktif !== null">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2" x-text="pertanyaanAktif.pertanyaan"></h2>
+            
+            <!-- Tampilan untuk Pertanyaan Likert -->
+            <template x-if="pertanyaanAktif.jenis === 'likert'">
+              <div>
+                <!-- Grafik Batang -->
+                <div class="chart-container">
+                  <canvas id="chartFrekuensi"></canvas>
+                </div>
+
+                <!-- Statistik Deskriptif -->
+                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Rata-rata</p>
+                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.mean"></p>
+                  </div>
+                  <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Standar Deviasi</p>
+                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.std_dev"></p>
+                  </div>
+                  <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Skewness</p>
+                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.skewness"></p>
+                  </div>
+                  <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Kurtosis</p>
+                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.kurtosis"></p>
+                  </div>
+                </div>
+
+                <!-- Tabel Frekuensi -->
+                <div class="mt-6 overflow-x-auto">
+                  <table class="min-w-full bg-white border border-gray-200">
+                    <thead>
+                      <tr class="bg-gray-100">
+                        <th class="py-2 px-4 border-b">Jawaban</th>
+                        <th class="py-2 px-4 border-b">Frekuensi</th>
+                        <th class="py-2 px-4 border-b">Persentase</th>
+                        <th class="py-2 px-4 border-b">Visualisasi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="(value, key) in pertanyaanAktif.frekuensi" :key="key">
+                        <tr class="hover:bg-gray-50">
+                          <td class="py-2 px-4 border-b" x-text="key"></td>
+                          <td class="py-2 px-4 border-b text-center" x-text="value"></td>
+                          <td class="py-2 px-4 border-b text-center" x-text="pertanyaanAktif.persentase[key] + '%'"></td>
+                          <td class="py-2 px-4 border-b">
+                            <div class="flex items-center">
+                              <div class="likert-bar bg-blue-500" 
+                                   :style="'width: ' + pertanyaanAktif.persentase[key] + '%'"></div>
+                              <span class="ml-2 text-xs" x-text="pertanyaanAktif.persentase[key] + '%'"></span>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </template>
+
+            <!-- Tampilan untuk Pertanyaan Isian -->
+            <template x-if="pertanyaanAktif.jenis === 'isian'">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Jawaban Responden:</h3>
+                <div class="space-y-4">
+                  <template x-for="(jawaban, index) in pertanyaanAktif.jawaban" :key="index">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                      <div class="flex justify-between items-start">
+                        <p class="text-gray-800" x-text="jawaban.teks"></p>
+                        <span class="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full" 
+                              x-text="jawaban.frekuensi + ' responden'"></span>
+                      </div>
+                      <div class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" 
+                             :style="'width: ' + (jawaban.frekuensi / metadata.total_responden * 100) + '%'"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <template x-if="pertanyaanAktif === null">
+          <div class="text-center py-12 text-gray-500">
+            Pilih pertanyaan dari daftar untuk melihat analisis
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Matriks Korelasi Container (hanya untuk Likert) -->
+    <div class="bg-white rounded-xl shadow-md p-6" x-show="Object.keys(korelasi).length > 0">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Matriks Korelasi Antar Pertanyaan Likert</h2>
+      
+      <!-- Informasi tentang korelasi -->
+      <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+        <p class="text-sm text-gray-600 mb-2">
+          <span class="font-semibold">Cara membaca:</span> Nilai mendekati 1 menunjukkan korelasi positif kuat, 
+          nilai mendekati -1 menunjukkan korelasi negatif kuat, dan nilai mendekati 0 menunjukkan korelasi lemah.
+        </p>
+        <div class="flex items-center mt-2">
+          <div class="h-2 w-32 bg-gradient-to-r from-blue-600 via-gray-200 to-red-600 rounded-full"></div>
+          <div class="w-full flex justify-between text-xs text-gray-600 px-1">
+            <span>Negatif Kuat (-1)</span>
+            <span>Tidak Ada Korelasi (0)</span>
+            <span>Positif Kuat (1)</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legend untuk signifikansi korelasi -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <div class="flex items-center">
+          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(255,0,0,0.7)"></div>
+          <span class="text-xs">Korelasi Negatif Kuat</span>
+        </div>
+        <div class="flex items-center">
+          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(255,200,200,0.7)"></div>
+          <span class="text-xs">Korelasi Negatif Lemah</span>
+        </div>
+        <div class="flex items-center">
+          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(240,240,240,0.7)"></div>
+          <span class="text-xs">Tidak Ada Korelasi</span>
+        </div>
+        <div class="flex items-center">
+          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(200,200,255,0.7)"></div>
+          <span class="text-xs">Korelasi Positif Lemah</span>
+        </div>
+        <div class="flex items-center">
+          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(0,0,255,0.7)"></div>
+          <span class="text-xs">Korelasi Positif Kuat</span>
+        </div>
+      </div>
+      
+      <!-- Kontrol untuk matriks korelasi -->
+      <div class="flex flex-wrap gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tampilkan Nilai</label>
+          <select x-model="showCorrelationValues" @change="renderCorrelationMatrix()" class="border rounded-md p-1 text-sm">
+            <option value="all">Semua Nilai</option>
+            <option value="significant">Hanya Signifikan (≥0.3)</option>
+            <option value="none">Tidak Ada</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Teks Label</label>
+          <select x-model="correlationLabelLength" @change="renderCorrelationMatrix()" class="border rounded-md p-1 text-sm">
+            <option value="15">Pendek</option>
+            <option value="30">Sedang</option>
+            <option value="50">Panjang</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="chart-container h-[600px]">
+        <div id="correlationMatrix" style="width:100%; height:100%;"></div>
+      </div>
+      
+      <!-- Top 5 korelasi tertinggi -->
+      <div class="mt-6 p-4 bg-gray-50 rounded-lg" x-show="topCorrelations.length > 0">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Korelasi Tertinggi</h3>
+        <div class="space-y-3">
+          <template x-for="(corr, index) in topCorrelations" :key="index">
+            <div class="flex flex-col bg-white p-3 rounded-lg shadow-sm">
+              <div class="flex justify-between items-center">
+                <div class="text-sm font-medium text-gray-700">
+                  <span x-text="'P' + corr.p1 + ' × P' + corr.p2"></span>
+                </div>
+                <div class="px-3 py-1 rounded-full text-sm" 
+                     :class="{
+                       'bg-red-100 text-red-800': corr.value < -0.5,
+                       'bg-red-50 text-red-600': corr.value < 0 && corr.value >= -0.5,
+                       'bg-blue-50 text-blue-600': corr.value > 0 && corr.value <= 0.5,
+                       'bg-blue-100 text-blue-800': corr.value > 0.5
+                     }"
+                     x-text="corr.value.toFixed(2)"></div>
+              </div>
+              <div class="mt-1 text-xs text-gray-500 line-clamp-2">
+                <span x-text="corr.labels.p1 + ' × ' + corr.labels.p2"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('dashboard', () => ({
+      showCorrelationValues: 'all',
+      correlationLabelLength: '15', 
+      topCorrelations: [],
+      metadata: {},
+      analisis: [],
+      filteredAnalisis: [],
+      korelasi: {},
+      pertanyaanAktif: null,
+      pertanyaanAktifIndex: null,
+      jenisFilter: 'semua',
+      chart: null,
+
+      async init() {
+        try {
+          const response = await fetch('analisis_kuisioner.json');
+          const data = await response.json();
+
+          this.metadata = data.metadata;
+          this.analisis = data.analisis;
+          this.korelasi = data.korelasi;
+          this.filteredAnalisis = this.analisis;
+
+          if (this.analisis.length > 0) {
+            this.pilihPertanyaan(0);
+          }
+
+          setTimeout(() => {
+            if (Object.keys(this.korelasi).length > 0) {
+              this.renderCorrelationMatrix();
+            }
+          }, 500);
+        } catch (error) {
+          console.error("Error loading data:", error);
+        }
+      },
+
+      filterJenis(jenis) {
+        this.jenisFilter = jenis;
+        this.filteredAnalisis = (jenis === 'semua')
+          ? this.analisis
+          : this.analisis.filter(item => item.jenis === jenis);
+
+        this.pertanyaanAktif = null;
+        this.pertanyaanAktifIndex = null;
+
+        if (this.filteredAnalisis.length > 0) {
+          this.pilihPertanyaan(0);
+        }
+      },
+
+      pilihPertanyaan(index) {
+        this.pertanyaanAktifIndex = index;
+        this.pertanyaanAktif = this.filteredAnalisis[index];
+
+        this.$nextTick(() => {
+          if (this.pertanyaanAktif.jenis === 'likert') {
+            this.renderChart();
+          }
+        });
+      },
+
+      renderChart() {
+        if (this.chart) this.chart.destroy();
+
+        const ctx = document.getElementById('chartFrekuensi');
+        if (!ctx) {
+          console.error("Element 'chartFrekuensi' not found");
+          return;
+        }
+
+        const data = this.pertanyaanAktif.frekuensi;
+
+        this.chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(data),
+            datasets: [{
+              label: 'Jumlah Responden',
+              data: Object.values(data),
+              backgroundColor: ['#ef4444', '#f97316', '#eab308', '#10b981', '#3b82f6'],
+              borderColor: ['#dc2626', '#ea580c', '#ca8a04', '#059669', '#2563eb'],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, precision: 0 }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const total = Object.values(data).reduce((a, b) => a + b, 0);
+                    const value = context.raw;
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `${value} responden (${percentage}%)`;
+                  }
+                }
+              },
+              legend: { display: false }
+            }
+          }
+        });
+      },
+
+      renderCorrelationMatrix() {
+        const element = document.getElementById('correlationMatrix');
+        if (!element) {
+          console.error("Element 'correlationMatrix' not found");
+          return;
+        }
+
+        const pertanyaan = Object.keys(this.korelasi);
+        const questionsWithIndex = pertanyaan.map((q, i) => ({ index: i + 1, text: q }));
+        const values = pertanyaan.map(q => pertanyaan.map(p => this.korelasi[q][p]));
+
+        this.calculateTopCorrelations(questionsWithIndex, values);
+
+        const labelLength = parseInt(this.correlationLabelLength);
+        const xLabels = questionsWithIndex.map(q => 'P' + q.index + ': ' + 
+          q.text.substring(0, labelLength) + (q.text.length > labelLength ? '...' : ''));
+        const yLabels = xLabels;
+
+        let annotations = [];
+        if (this.showCorrelationValues !== 'none') {
+          for (let i = 0; i < values.length; i++) {
+            for (let j = 0; j < values[i].length; j++) {
+              const value = values[i][j];
+              if (this.showCorrelationValues === 'significant' && Math.abs(value) < 0.3) continue;
+
+              annotations.push({
+                x: xLabels[j],
+                y: yLabels[i],
+                text: value.toFixed(2),
+                font: {
+                  color: Math.abs(value) > 0.7 ? 'white' : 'black',
+                  size: 9
+                },
+                showarrow: false
+              });
+            }
+          }
+        }
+
+        const data = {
+          z: values,
+          x: xLabels,
+          y: yLabels,
+          type: 'heatmap',
+          colorscale: [
+            [0.0, 'rgb(165,0,38)'],
+            [0.1, 'rgb(215,48,39)'],
+            [0.2, 'rgb(244,109,67)'],
+            [0.3, 'rgb(253,174,97)'],
+            [0.4, 'rgb(254,224,144)'],
+            [0.5, 'rgb(255,255,191)'],
+            [0.6, 'rgb(224,243,248)'],
+            [0.7, 'rgb(171,217,233)'],
+            [0.8, 'rgb(116,173,209)'],
+            [0.9, 'rgb(69,117,180)'],
+            [1.0, 'rgb(49,54,149)']
+          ],
+          zmin: -1,
+          zmax: 1,
+          hoverongaps: false,
+          hovertemplate: 'P%{y} × P%{x}<br>Korelasi: %{z:.2f}<extra></extra>'
+        };
+
+        const layout = {
+          margin: { t: 30, l: 180, r: 30, b: 180 },
+          height: 600,
+          xaxis: { tickangle: -45, automargin: true },
+          yaxis: { autorange: 'reversed', automargin: true },
+          annotations: annotations
+        };
+
+        const config = {
+          responsive: true,
+          displayModeBar: true,
+          modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+          displaylogo: false
+        };
+
+        try {
+          Plotly.newPlot('correlationMatrix', [data], layout, config);
+        } catch (error) {
+          console.error("Error rendering correlation matrix:", error);
+        }
+      },
+
+      calculateTopCorrelations(questionsWithIndex, values) {
+        let correlations = [];
+
+        for (let i = 0; i < values.length; i++) {
+          for (let j = i + 1; j < values[i].length; j++) {
+            correlations.push({
+              p1: questionsWithIndex[i].index,
+              p2: questionsWithIndex[j].index,
+              labels: {
+                p1: questionsWithIndex[i].text,
+                p2: questionsWithIndex[j].text,
+              },
+              value: values[i][j]
+            });
+          }
+        }
+
+        correlations.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+        this.topCorrelations = correlations.slice(0, 5);
+      }
+    }));
+  });
+</script>
+
+</body>
+</html>
