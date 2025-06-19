@@ -1,519 +1,930 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Analisis Kuisioner Bahasa Jepang</title>
-  <!-- Pindahkan Alpine.js setelah Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Replace with specific version of Plotly -->
-  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-  <style>
-    .chart-container {
-      position: relative;
-      height: 300px;
-      width: 100%;
-    }
-    .likert-bar {
-      height: 20px;
-      border-radius: 4px;
-    }
-    @media (max-width: 640px) {
-      .responsive-text {
-        font-size: 14px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Data Survei LPK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 md:p-6" x-data="dashboard">
-  <div class="max-w-7xl mx-auto space-y-6">
-    <!-- Header -->
-    <div class="bg-white rounded-xl shadow-md p-6 text-center">
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📊 Analisis Kuisioner Pembelajaran Bahasa Jepang</h1>
-      <p class="text-gray-600 mt-2">Hasil analisis dari 35 responden</p>
-      <div class="mt-4 flex flex-wrap justify-center gap-4">
-        <div class="bg-blue-50 text-blue-800 px-4 py-2 rounded-lg">
-          <span class="font-bold">Reliabilitas:</span> <span x-text="metadata.reliabilitas"></span> (Cronbach's Alpha)
-        </div>
-        <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg">
-          <span class="font-bold">Total Pertanyaan:</span> <span x-text="metadata.total_pertanyaan"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter Jenis Pertanyaan -->
-    <div class="bg-white rounded-xl shadow-md p-4">
-      <div class="flex flex-wrap gap-2">
-        <button 
-          @click="filterJenis('semua')"
-          class="px-4 py-2 rounded-lg transition"
-          :class="{
-            'bg-blue-500 text-white': jenisFilter === 'semua',
-            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'semua'
-          }">
-          Semua
-        </button>
-        <button 
-          @click="filterJenis('likert')"
-          class="px-4 py-2 rounded-lg transition"
-          :class="{
-            'bg-blue-500 text-white': jenisFilter === 'likert',
-            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'likert'
-          }">
-          Skala Likert
-        </button>
-        <button 
-          @click="filterJenis('isian')"
-          class="px-4 py-2 rounded-lg transition"
-          :class="{
-            'bg-blue-500 text-white': jenisFilter === 'isian',
-            'bg-gray-200 hover:bg-gray-300': jenisFilter !== 'isian'
-          }">
-          Pertanyaan Isian
-        </button>
-      </div>
-    </div>
-
-    <!-- Grafik Utama -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Daftar Pertanyaan -->
-      <div class="bg-white rounded-xl shadow-md p-6 lg:col-span-1">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Daftar Pertanyaan</h2>
-        <div class="space-y-2 max-h-[500px] overflow-y-auto">
-          <template x-for="(item, index) in filteredAnalisis" :key="index">
-            <button 
-              @click="pilihPertanyaan(index)"
-              class="w-full text-left px-3 py-2 rounded-lg transition text-sm"
-              :class="{
-                'bg-blue-100 text-blue-800': pertanyaanAktifIndex === index && jenisFilter === 'semua',
-                'bg-green-100 text-green-800': pertanyaanAktifIndex === index && jenisFilter === 'likert',
-                'bg-purple-100 text-purple-800': pertanyaanAktifIndex === index && jenisFilter === 'isian',
-                'hover:bg-gray-100': pertanyaanAktifIndex !== index
-              }"
-              x-text="item.pertanyaan.substring(0, 70) + (item.pertanyaan.length > 70 ? '...' : '')">
-            </button>
-          </template>
-        </div>
-      </div>
-
-      <!-- Grafik dan Statistik -->
-      <div class="bg-white rounded-xl shadow-md p-6 lg:col-span-2 space-y-6">
-        <template x-if="pertanyaanAktif !== null">
-          <div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2" x-text="pertanyaanAktif.pertanyaan"></h2>
-            
-            <!-- Tampilan untuk Pertanyaan Likert -->
-            <template x-if="pertanyaanAktif.jenis === 'likert'">
-              <div>
-                <!-- Grafik Batang -->
-                <div class="chart-container">
-                  <canvas id="chartFrekuensi"></canvas>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-800">Visualisasi Data Survei LPK</h1>
+        
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Filter Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pertanyaan</label>
+                    <select id="questionSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <!-- Options will be filled by JavaScript -->
+                    </select>
                 </div>
-
-                <!-- Statistik Deskriptif -->
-                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Rata-rata</p>
-                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.mean"></p>
-                  </div>
-                  <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Standar Deviasi</p>
-                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.std_dev"></p>
-                  </div>
-                  <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Skewness</p>
-                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.skewness"></p>
-                  </div>
-                  <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Kurtosis</p>
-                    <p class="text-xl font-bold" x-text="pertanyaanAktif.deskriptif.kurtosis"></p>
-                  </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kelompok Umur</label>
+                    <select id="ageGroupSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">Semua Umur</option>
+                        <option value="20-25">20-25 tahun</option>
+                        <option value="26-30">26-30 tahun</option>
+                        <option value="31+">31+ tahun</option>
+                    </select>
                 </div>
-
-                <!-- Tabel Frekuensi -->
-                <div class="mt-6 overflow-x-auto">
-                  <table class="min-w-full bg-white border border-gray-200">
-                    <thead>
-                      <tr class="bg-gray-100">
-                        <th class="py-2 px-4 border-b">Jawaban</th>
-                        <th class="py-2 px-4 border-b">Frekuensi</th>
-                        <th class="py-2 px-4 border-b">Persentase</th>
-                        <th class="py-2 px-4 border-b">Visualisasi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <template x-for="(value, key) in pertanyaanAktif.frekuensi" :key="key">
-                        <tr class="hover:bg-gray-50">
-                          <td class="py-2 px-4 border-b" x-text="key"></td>
-                          <td class="py-2 px-4 border-b text-center" x-text="value"></td>
-                          <td class="py-2 px-4 border-b text-center" x-text="pertanyaanAktif.persentase[key] + '%'"></td>
-                          <td class="py-2 px-4 border-b">
-                            <div class="flex items-center">
-                              <div class="likert-bar bg-blue-500" 
-                                   :style="'width: ' + pertanyaanAktif.persentase[key] + '%'"></div>
-                              <span class="ml-2 text-xs" x-text="pertanyaanAktif.persentase[key] + '%'"></span>
-                            </div>
-                          </td>
-                        </tr>
-                      </template>
-                    </tbody>
-                  </table>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                    <select id="genderSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">Semua Jenis Kelamin</option>
+                        <option value="Laki-Laki">Laki-Laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
                 </div>
-              </div>
-            </template>
-
-            <!-- Tampilan untuk Pertanyaan Isian -->
-            <template x-if="pertanyaanAktif.jenis === 'isian'">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Jawaban Responden:</h3>
-                <div class="space-y-4">
-                  <template x-for="(jawaban, index) in pertanyaanAktif.jawaban" :key="index">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                      <div class="flex justify-between items-start">
-                        <p class="text-gray-800" x-text="jawaban.teks"></p>
-                        <span class="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full" 
-                              x-text="jawaban.frekuensi + ' responden'"></span>
-                      </div>
-                      <div class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-blue-600 h-2.5 rounded-full" 
-                             :style="'width: ' + (jawaban.frekuensi / metadata.total_responden * 100) + '%'"></div>
-                      </div>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </template>
-          </div>
-        </template>
-
-        <template x-if="pertanyaanAktif === null">
-          <div class="text-center py-12 text-gray-500">
-            Pilih pertanyaan dari daftar untuk melihat analisis
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <!-- Matriks Korelasi Container (hanya untuk Likert) -->
-    <div class="bg-white rounded-xl shadow-md p-6" x-show="Object.keys(korelasi).length > 0">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Matriks Korelasi Antar Pertanyaan Likert</h2>
-      
-      <!-- Informasi tentang korelasi -->
-      <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-        <p class="text-sm text-gray-600 mb-2">
-          <span class="font-semibold">Cara membaca:</span> Nilai mendekati 1 menunjukkan korelasi positif kuat, 
-          nilai mendekati -1 menunjukkan korelasi negatif kuat, dan nilai mendekati 0 menunjukkan korelasi lemah.
-        </p>
-        <div class="flex items-center mt-2">
-          <div class="h-2 w-32 bg-gradient-to-r from-blue-600 via-gray-200 to-red-600 rounded-full"></div>
-          <div class="w-full flex justify-between text-xs text-gray-600 px-1">
-            <span>Negatif Kuat (-1)</span>
-            <span>Tidak Ada Korelasi (0)</span>
-            <span>Positif Kuat (1)</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Legend untuk signifikansi korelasi -->
-      <div class="flex flex-wrap gap-2 mb-4">
-        <div class="flex items-center">
-          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(255,0,0,0.7)"></div>
-          <span class="text-xs">Korelasi Negatif Kuat</span>
-        </div>
-        <div class="flex items-center">
-          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(255,200,200,0.7)"></div>
-          <span class="text-xs">Korelasi Negatif Lemah</span>
-        </div>
-        <div class="flex items-center">
-          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(240,240,240,0.7)"></div>
-          <span class="text-xs">Tidak Ada Korelasi</span>
-        </div>
-        <div class="flex items-center">
-          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(200,200,255,0.7)"></div>
-          <span class="text-xs">Korelasi Positif Lemah</span>
-        </div>
-        <div class="flex items-center">
-          <div class="h-4 w-4 rounded mr-1" style="background-color: rgba(0,0,255,0.7)"></div>
-          <span class="text-xs">Korelasi Positif Kuat</span>
-        </div>
-      </div>
-      
-      <!-- Kontrol untuk matriks korelasi -->
-      <div class="flex flex-wrap gap-4 mb-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tampilkan Nilai</label>
-          <select x-model="showCorrelationValues" @change="renderCorrelationMatrix()" class="border rounded-md p-1 text-sm">
-            <option value="all">Semua Nilai</option>
-            <option value="significant">Hanya Signifikan (≥0.3)</option>
-            <option value="none">Tidak Ada</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Teks Label</label>
-          <select x-model="correlationLabelLength" @change="renderCorrelationMatrix()" class="border rounded-md p-1 text-sm">
-            <option value="15">Pendek</option>
-            <option value="30">Sedang</option>
-            <option value="50">Panjang</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="chart-container h-[600px]">
-        <div id="correlationMatrix" style="width:100%; height:100%;"></div>
-      </div>
-      
-      <!-- Top 5 korelasi tertinggi -->
-      <div class="mt-6 p-4 bg-gray-50 rounded-lg" x-show="topCorrelations.length > 0">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">Korelasi Tertinggi</h3>
-        <div class="space-y-3">
-          <template x-for="(corr, index) in topCorrelations" :key="index">
-            <div class="flex flex-col bg-white p-3 rounded-lg shadow-sm">
-              <div class="flex justify-between items-center">
-                <div class="text-sm font-medium text-gray-700">
-                  <span x-text="'P' + corr.p1 + ' × P' + corr.p2"></span>
-                </div>
-                <div class="px-3 py-1 rounded-full text-sm" 
-                     :class="{
-                       'bg-red-100 text-red-800': corr.value < -0.5,
-                       'bg-red-50 text-red-600': corr.value < 0 && corr.value >= -0.5,
-                       'bg-blue-50 text-blue-600': corr.value > 0 && corr.value <= 0.5,
-                       'bg-blue-100 text-blue-800': corr.value > 0.5
-                     }"
-                     x-text="corr.value.toFixed(2)"></div>
-              </div>
-              <div class="mt-1 text-xs text-gray-500 line-clamp-2">
-                <span x-text="corr.labels.p1 + ' × ' + corr.labels.p2"></span>
-              </div>
             </div>
-          </template>
         </div>
-      </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Pie Chart -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Distribusi Jawaban</h2>
+                <div class="h-80">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Bar Chart -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Perbandingan Jawaban</h2>
+                <div class="h-80">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Respondent Demographics -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Demografi Responden</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="font-medium text-gray-600 mb-2">Distribusi Umur</h3>
+                    <div class="h-64">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-600 mb-2">Jenis Kelamin</h3>
+                    <div class="h-64">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-600 mb-2">Pendidikan Terakhir</h3>
+                    <div class="h-64">
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Respondent Table -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Daftar Responden</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Kelamin</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pendidikan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="respondentTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be filled by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-<script>
-  document.addEventListener('alpine:init', () => {
-    Alpine.data('dashboard', () => ({
-      showCorrelationValues: 'all',
-      correlationLabelLength: '15', 
-      topCorrelations: [],
-      metadata: {},
-      analisis: [],
-      filteredAnalisis: [],
-      korelasi: {},
-      pertanyaanAktif: null,
-      pertanyaanAktifIndex: null,
-      jenisFilter: 'semua',
-      chart: null,
-
-      async init() {
-        try {
-          const response = await fetch('analisis_kuisioner.json');
-          const data = await response.json();
-
-          this.metadata = data.metadata;
-          this.analisis = data.analisis;
-          this.korelasi = data.korelasi;
-          this.filteredAnalisis = this.analisis;
-
-          if (this.analisis.length > 0) {
-            this.pilihPertanyaan(0);
-          }
-
-          setTimeout(() => {
-            if (Object.keys(this.korelasi).length > 0) {
-              this.renderCorrelationMatrix();
-            }
-          }, 500);
-        } catch (error) {
-          console.error("Error loading data:", error);
-        }
+    <script>
+        // Sample data (replace with your actual data fetching logic)
+        const surveyData = {
+  "Employees": {
+    "Employee": [
+      {
+        "Timestamp": "19/06/2025 13:30:31",
+        "Nama Lengkap :": "KADEK SUARDITA",
+        "Umur : ": "27",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Sangat Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Sangat Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Sangat Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Sangat Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Sangat Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Setuju\r"
       },
-
-      filterJenis(jenis) {
-        this.jenisFilter = jenis;
-        this.filteredAnalisis = (jenis === 'semua')
-          ? this.analisis
-          : this.analisis.filter(item => item.jenis === jenis);
-
-        this.pertanyaanAktif = null;
-        this.pertanyaanAktifIndex = null;
-
-        if (this.filteredAnalisis.length > 0) {
-          this.pilihPertanyaan(0);
-        }
+      {
+        "Timestamp": "19/06/2025 13:30:46",
+        "Nama Lengkap :": "Putu Alya Sertinia Putri",
+        "Umur : ": "20 tahun",
+        "Jenis Kelamin : ": "Perempuan",
+        "Pendidikan Terakhir :": "Diploma/D3",
+        "Berapa Lama Belajar di LPK : ": "3 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Sangat Tidak Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Sangat Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Sangat Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Sangat Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Sangat Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Sangat Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Tidak Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Sangat Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Sangat Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Sangat Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Sangat Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Sangat Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Sangat Tidak Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Tidak Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Sangat Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Sangat Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Sangat Tidak Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Sangat Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Tidak Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Sangat Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Sangat Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Sangat Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Sangat Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Sangat Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Sangat Tidak Setuju\r"
       },
-
-      pilihPertanyaan(index) {
-        this.pertanyaanAktifIndex = index;
-        this.pertanyaanAktif = this.filteredAnalisis[index];
-
-        this.$nextTick(() => {
-          if (this.pertanyaanAktif.jenis === 'likert') {
-            this.renderChart();
-          }
-        });
+      {
+        "Timestamp": "19/06/2025 13:31:43",
+        "Nama Lengkap :": "Putu Pria Sapitri ",
+        "Umur : ": "21",
+        "Jenis Kelamin : ": "Perempuan",
+        "Pendidikan Terakhir :": "Diploma/D3",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Sangat Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Tidak Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Tidak Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Tidak Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Tidak Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Tidak Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Tidak Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Tidak Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Tidak Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Tidak Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Tidak Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Sangat Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Sangat Tidak Setuju\r"
       },
-
-      renderChart() {
-        if (this.chart) this.chart.destroy();
-
-        const ctx = document.getElementById('chartFrekuensi');
-        if (!ctx) {
-          console.error("Element 'chartFrekuensi' not found");
-          return;
-        }
-
-        const data = this.pertanyaanAktif.frekuensi;
-
-        this.chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: Object.keys(data),
-            datasets: [{
-              label: 'Jumlah Responden',
-              data: Object.values(data),
-              backgroundColor: ['#ef4444', '#f97316', '#eab308', '#10b981', '#3b82f6'],
-              borderColor: ['#dc2626', '#ea580c', '#ca8a04', '#059669', '#2563eb'],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1, precision: 0 }
-              }
-            },
-            plugins: {
-              tooltip: {
-                callbacks: {
-                  label: (context) => {
-                    const total = Object.values(data).reduce((a, b) => a + b, 0);
-                    const value = context.raw;
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${value} responden (${percentage}%)`;
-                  }
-                }
-              },
-              legend: { display: false }
-            }
-          }
-        });
+      {
+        "Timestamp": "19/06/2025 13:33:17",
+        "Nama Lengkap :": "I gede riantiana",
+        "Umur : ": "31",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Tidak Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Tidak Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Tidak Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Tidak Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Sangat Tidak Setuju\r"
       },
-
-      renderCorrelationMatrix() {
-        const element = document.getElementById('correlationMatrix');
-        if (!element) {
-          console.error("Element 'correlationMatrix' not found");
-          return;
-        }
-
-        const pertanyaan = Object.keys(this.korelasi);
-        const questionsWithIndex = pertanyaan.map((q, i) => ({ index: i + 1, text: q }));
-        const values = pertanyaan.map(q => pertanyaan.map(p => this.korelasi[q][p]));
-
-        this.calculateTopCorrelations(questionsWithIndex, values);
-
-        const labelLength = parseInt(this.correlationLabelLength);
-        const xLabels = questionsWithIndex.map(q => 'P' + q.index + ': ' + 
-          q.text.substring(0, labelLength) + (q.text.length > labelLength ? '...' : ''));
-        const yLabels = xLabels;
-
-        let annotations = [];
-        if (this.showCorrelationValues !== 'none') {
-          for (let i = 0; i < values.length; i++) {
-            for (let j = 0; j < values[i].length; j++) {
-              const value = values[i][j];
-              if (this.showCorrelationValues === 'significant' && Math.abs(value) < 0.3) continue;
-
-              annotations.push({
-                x: xLabels[j],
-                y: yLabels[i],
-                text: value.toFixed(2),
-                font: {
-                  color: Math.abs(value) > 0.7 ? 'white' : 'black',
-                  size: 9
-                },
-                showarrow: false
-              });
-            }
-          }
-        }
-
-        const data = {
-          z: values,
-          x: xLabels,
-          y: yLabels,
-          type: 'heatmap',
-          colorscale: [
-            [0.0, 'rgb(165,0,38)'],
-            [0.1, 'rgb(215,48,39)'],
-            [0.2, 'rgb(244,109,67)'],
-            [0.3, 'rgb(253,174,97)'],
-            [0.4, 'rgb(254,224,144)'],
-            [0.5, 'rgb(255,255,191)'],
-            [0.6, 'rgb(224,243,248)'],
-            [0.7, 'rgb(171,217,233)'],
-            [0.8, 'rgb(116,173,209)'],
-            [0.9, 'rgb(69,117,180)'],
-            [1.0, 'rgb(49,54,149)']
-          ],
-          zmin: -1,
-          zmax: 1,
-          hoverongaps: false,
-          hovertemplate: 'P%{y} × P%{x}<br>Korelasi: %{z:.2f}<extra></extra>'
-        };
-
-        const layout = {
-          margin: { t: 30, l: 180, r: 30, b: 180 },
-          height: 600,
-          xaxis: { tickangle: -45, automargin: true },
-          yaxis: { autorange: 'reversed', automargin: true },
-          annotations: annotations
-        };
-
-        const config = {
-          responsive: true,
-          displayModeBar: true,
-          modeBarButtonsToRemove: ['lasso2d', 'select2d'],
-          displaylogo: false
-        };
-
-        try {
-          Plotly.newPlot('correlationMatrix', [data], layout, config);
-        } catch (error) {
-          console.error("Error rendering correlation matrix:", error);
-        }
+      {
+        "Timestamp": "19/06/2025 13:33:20",
+        "Nama Lengkap :": "Kadek dana yasa",
+        "Umur : ": "22 tahun",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Tidak Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Tidak Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Tidak Setuju\r"
       },
-
-      calculateTopCorrelations(questionsWithIndex, values) {
-        let correlations = [];
-
-        for (let i = 0; i < values.length; i++) {
-          for (let j = i + 1; j < values[i].length; j++) {
-            correlations.push({
-              p1: questionsWithIndex[i].index,
-              p2: questionsWithIndex[j].index,
-              labels: {
-                p1: questionsWithIndex[i].text,
-                p2: questionsWithIndex[j].text,
-              },
-              value: values[i][j]
-            });
-          }
-        }
-
-        correlations.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
-        this.topCorrelations = correlations.slice(0, 5);
+      {
+        "Timestamp": "19/06/2025 13:33:38",
+        "Nama Lengkap :": "Kadek Irma Dwi Anggreni ",
+        "Umur : ": "25",
+        "Jenis Kelamin : ": "Perempuan",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Tidak Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Tidak Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Tidak Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Tidak Setuju\r"
+      },
+      {
+        "Timestamp": "19/06/2025 13:35:08",
+        "Nama Lengkap :": "I Gusti Bagus putu Ari sanajaya",
+        "Umur : ": "27",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Tidak Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Sangat Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Tidak Setuju\r"
+      },
+      {
+        "Timestamp": "19/06/2025 13:36:08",
+        "Nama Lengkap :": "Ida bagus komang adi putra",
+        "Umur : ": "23 thn",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Tidak Setuju\r"
+      },
+      {
+        "Timestamp": "19/06/2025 13:37:00",
+        "Nama Lengkap :": "gusti bagus made ari putra",
+        "Umur : ": "27",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "SMA/SMK",
+        "Berapa Lama Belajar di LPK : ": "3 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Sangat Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Sangat Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Tidak Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Tidak Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Sangat Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Sangat Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Sangat Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Sangat Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Sangat Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Sangat Tidak Setuju\r"
+      },
+      {
+        "Timestamp": "19/06/2025 13:41:56",
+        "Nama Lengkap :": "Kadek Era Listia Dewi ",
+        "Umur : ": "21",
+        "Jenis Kelamin : ": "Perempuan",
+        "Pendidikan Terakhir :": "Diploma 1",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Tidak Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Sangat Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Sangat Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Tidak Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Sangat Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Sangat Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Tidak Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Tidak Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Sangat Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Sangat Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Sangat Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Sangat Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Sangat Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Tidak Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Sangat Tidak Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Sangat Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Tidak Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Tidak Setuju\r"
+      },
+      {
+        "Timestamp": "19/06/2025 15:16:35",
+        "Nama Lengkap :": "I Kadek Budi Dwi Ariawan ",
+        "Umur : ": "23",
+        "Jenis Kelamin : ": "Laki-Laki",
+        "Pendidikan Terakhir :": "Sarjana",
+        "Berapa Lama Belajar di LPK : ": "3-6 Bulan",
+        "1. Saya sering lupa kosakata yang sudah dipelajari pada materi sebelumnya": "Setuju",
+        "2. Flashcards (kartu kosakata) membantu saya mengingat kosakata dengan baik": "Setuju",
+        "3. Aplikasi digital seperti Anki efektif untuk pembelajaran kosakata saya": "Setuju",
+        "\"4. Quiz online (Quizizz": "Setuju",
+        " Kahoot) membuat saya lebih termotivasi belajar kosakata\"": "Setuju",
+        "5. Review (fukushuu) yang dilakukan instruktur membantu saya mengingat materi sebelumnya": "Setuju",
+        "6. Waktu yang diberikan untuk mempelajari kosakata sudah cukup": "Setuju",
+        "7. Jumlah kosakata yang diajarkan dalam satu pertemuan sudah sesuai": "Setuju",
+        "8. Saya mudah memahami pola kalimat yang diajarkan instruktur": "Setuju",
+        "9. Penjelasan tata bahasa oleh instruktur sudah cukup jelas": "Setuju",
+        "10. Saya kesulitan menggunakan pola kalimat yang sudah dipelajari dalam percakapan": "Setuju",
+        "11. Latihan (drill) yang diberikan instruktur membantu saya menguasai tata bahasa": "Setuju",
+        "12. Contoh-contoh kalimat yang diberikan mudah dipahami": "Setuju",
+        "13. Saya percaya diri ketika berbicara bahasa Jepang": "Setuju",
+        "14. Saya dapat berpikir cepat ketika harus merespon dalam bahasa Jepang": "Sangat Tidak Setuju",
+        "15. Kosakata yang saya kuasai sudah cukup untuk berkomunikasi dasar": "Setuju",
+        "16. Saya sering berlatih percakapan bahasa Jepang di luar kelas": "Setuju",
+        "17. Instruktur memberikan kesempatan yang cukup untuk praktek percakapan": "Setuju",
+        "18. Saya pernah mengikuti tes awal (pretest) sebelum memulai materi baru": "Setuju",
+        "19. Saya pernah mengikuti tes akhir (posttest) setelah menyelesaikan materi": "Setuju",
+        "20. Tes berkala (pretest-posttest) diperlukan untuk mengukur kemajuan pembelajaran saya": "Setuju",
+        "21. Saya dapat mengetahui dengan jelas kemajuan pembelajaran saya selama ini": "Setuju",
+        "22. Feedback dari instruktur membantu saya memahami kekurangan dalam pembelajaran": "Tidak Setuju",
+        "23. Sistem penilaian saat ini sudah cukup untuk mengevaluasi kemampuan saya": "Tidak Setuju",
+        "24. Tes Uchida Kraepelin (tes perhitungan berantai) sulit bagi saya": "Sangat Setuju",
+        "25. Saya memerlukan bantuan khusus untuk persiapan tes Uchida Kraepelin": "Sangat Setuju",
+        "26. Pembelajaran bahasa Jepang dan persiapan tes matematika perlu diintegrasikan": "Setuju",
+        "27. Kecepatan perhitungan saya sudah memadai untuk tes Uchida Kraepelin": "Setuju",
+        "28. Saya mudah stress/tertekan ketika mengerjakan tes perhitungan": "Setuju",
+        "29. Media pembelajaran yang digunakan saat ini sudah efektif untuk saya": "Setuju",
+        "30. Saya tertarik menggunakan aplikasi digital untuk pembelajaran bahasa Jepang": "Sangat Tidak Setuju",
+        "31. Pembelajaran dengan gamifikasi (game) akan membuat saya lebih termotivasi": "Setuju",
+        "32. Saya memerlukan platform yang dapat melacak kemajuan pembelajaran saya": "Setuju",
+        "33. Video pembelajaran lebih efektif daripada penjelasan lisan instruktur": "Setuju",
+        "34. Saya sangat termotivasi untuk bekerja di Jepang": "Setuju",
+        "35. Pembelajaran di LPK ini sesuai dengan harapan saya": "Tidak Setuju",
+        "36. Saya merasa siap menghadapi tes-tes untuk bekerja di Jepang": "Setuju",
+        "37. Instruktur memberikan motivasi yang cukup dalam pembelajaran": "Tidak Setuju",
+        "38. Atmosfer kelas mendukung pembelajaran yang efektif": "Setuju",
+        "39. Instruktur terlihat kurang menguasai materi yang diajarkan ": "Setuju"
       }
-    }));
-  });
-</script>
+    ]
+  }
 
+        };
+
+        // Initialize charts
+        let pieChart, barChart, ageChart, genderChart, educationChart;
+        
+        // DOM elements
+        const questionSelect = document.getElementById('questionSelect');
+        const ageGroupSelect = document.getElementById('ageGroupSelect');
+        const genderSelect = document.getElementById('genderSelect');
+        const respondentTable = document.getElementById('respondentTable');
+        
+        // Process data and initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate question dropdown
+            const firstRespondent = surveyData.Employees.Employee[0];
+            const questions = Object.keys(firstRespondent).filter(key => 
+                key.match(/^\d+\./) || key.startsWith('"') || key.startsWith(' ')
+            );
+            
+            questions.forEach((question, index) => {
+                const option = document.createElement('option');
+                option.value = question;
+                option.textContent = question.replace(/"/g, '').trim();
+                questionSelect.appendChild(option);
+            });
+            
+            // Initialize charts
+            initializeCharts();
+            updateRespondentTable();
+            
+            // Add event listeners for filters
+            questionSelect.addEventListener('change', updateCharts);
+            ageGroupSelect.addEventListener('change', updateCharts);
+            genderSelect.addEventListener('change', updateCharts);
+        });
+        
+        function initializeCharts() {
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            const ageCtx = document.getElementById('ageChart').getContext('2d');
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            const educationCtx = document.getElementById('educationChart').getContext('2d');
+            
+            // Initialize with empty data (will be updated)
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+            
+            // Demographics charts
+            updateDemographicsCharts();
+        }
+        
+        function updateCharts() {
+            const selectedQuestion = questionSelect.value;
+            const ageGroup = ageGroupSelect.value;
+            const gender = genderSelect.value;
+            
+            // Filter respondents based on age and gender
+            const filteredRespondents = surveyData.Employees.Employee.filter(respondent => {
+                // Age filter
+                let ageMatch = true;
+                if (ageGroup !== 'all') {
+                    const age = parseInt(respondent['Umur : ']) || 0;
+                    if (ageGroup === '20-25') ageMatch = age >= 20 && age <= 25;
+                    else if (ageGroup === '26-30') ageMatch = age >= 26 && age <= 30;
+                    else if (ageGroup === '31+') ageMatch = age >= 31;
+                }
+                
+                // Gender filter
+                const genderMatch = gender === 'all' || respondent['Jenis Kelamin : '] === gender;
+                
+                return ageMatch && genderMatch;
+            });
+            
+            // Count answers for the selected question
+            const answerCounts = {
+                'Sangat Setuju': 0,
+                'Setuju': 0,
+                'Tidak Setuju': 0,
+                'Sangat Tidak Setuju': 0
+            };
+            
+            filteredRespondents.forEach(respondent => {
+                const answer = respondent[selectedQuestion];
+                if (answer && answerCounts.hasOwnProperty(answer)) {
+                    answerCounts[answer]++;
+                }
+            });
+            
+            // Update pie chart
+            pieChart.data.labels = Object.keys(answerCounts);
+            pieChart.data.datasets[0].data = Object.values(answerCounts);
+            pieChart.data.datasets[0].backgroundColor = [
+                '#4ade80', // green for sangat setuju
+                '#a3e635', // lime for setuju
+                '#fbbf24', // amber for tidak setuju
+                '#f87171'  // red for sangat tidak setuju
+            ];
+            pieChart.update();
+            
+            // Update bar chart (could show comparison by gender or age group)
+            // For simplicity, we'll just show the same data as bar chart
+            barChart.data.labels = Object.keys(answerCounts);
+            barChart.data.datasets = [{
+                label: 'Jumlah Responden',
+                data: Object.values(answerCounts),
+                backgroundColor: '#3b82f6',
+                borderColor: '#1d4ed8',
+                borderWidth: 1
+            }];
+            barChart.update();
+            
+            // Update respondent table
+            updateRespondentTable(filteredRespondents);
+        }
+        
+        function updateDemographicsCharts() {
+            const respondents = surveyData.Employees.Employee;
+            
+            // Age distribution
+            const ageGroups = {
+                '20-25': 0,
+                '26-30': 0,
+                '31+': 0
+            };
+            
+            respondents.forEach(respondent => {
+                const age = parseInt(respondent['Umur : ']) || 0;
+                if (age >= 20 && age <= 25) ageGroups['20-25']++;
+                else if (age >= 26 && age <= 30) ageGroups['26-30']++;
+                else if (age >= 31) ageGroups['31+']++;
+            });
+            
+            if (ageChart) {
+                ageChart.data.labels = Object.keys(ageGroups);
+                ageChart.data.datasets = [{
+                    label: 'Jumlah Responden',
+                    data: Object.values(ageGroups),
+                    backgroundColor: '#6366f1',
+                    borderColor: '#4f46e5',
+                    borderWidth: 1
+                }];
+                ageChart.update();
+            } else {
+                const ageCtx = document.getElementById('ageChart').getContext('2d');
+                ageChart = new Chart(ageCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(ageGroups),
+                        datasets: [{
+                            label: 'Jumlah Responden',
+                            data: Object.values(ageGroups),
+                            backgroundColor: '#6366f1',
+                            borderColor: '#4f46e5',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+            
+            // Gender distribution
+            const genderCounts = {
+                'Laki-Laki': 0,
+                'Perempuan': 0
+            };
+            
+            respondents.forEach(respondent => {
+                const gender = respondent['Jenis Kelamin : '];
+                if (gender && genderCounts.hasOwnProperty(gender)) {
+                    genderCounts[gender]++;
+                }
+            });
+            
+            if (genderChart) {
+                genderChart.data.labels = Object.keys(genderCounts);
+                genderChart.data.datasets[0].data = Object.values(genderCounts);
+                genderChart.data.datasets[0].backgroundColor = ['#60a5fa', '#f472b6'];
+                genderChart.update();
+            } else {
+                const genderCtx = document.getElementById('genderChart').getContext('2d');
+                genderChart = new Chart(genderCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(genderCounts),
+                        datasets: [{
+                            data: Object.values(genderCounts),
+                            backgroundColor: ['#60a5fa', '#f472b6']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+            
+            // Education distribution
+            const educationCounts = {};
+            
+            respondents.forEach(respondent => {
+                const education = respondent['Pendidikan Terakhir :'];
+                if (education) {
+                    educationCounts[education] = (educationCounts[education] || 0) + 1;
+                }
+            });
+            
+            if (educationChart) {
+                educationChart.data.labels = Object.keys(educationCounts);
+                educationChart.data.datasets[0].data = Object.values(educationCounts);
+                educationChart.update();
+            } else {
+                const educationCtx = document.getElementById('educationChart').getContext('2d');
+                educationChart = new Chart(educationCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(educationCounts),
+                        datasets: [{
+                            data: Object.values(educationCounts),
+                            backgroundColor: [
+                                '#f59e0b',
+                                '#10b981',
+                                '#3b82f6',
+                                '#8b5cf6'
+                            ]
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+        
+        function updateRespondentTable(filteredRespondents = null) {
+            const respondents = filteredRespondents || surveyData.Employees.Employee;
+            
+            // Clear existing rows
+            respondentTable.innerHTML = '';
+            
+            // Add new rows
+            respondents.forEach((respondent, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                
+                const cells = [
+                    index + 1,
+                    respondent['Nama Lengkap :'] || '-',
+                    respondent['Umur : '] || '-',
+                    respondent['Jenis Kelamin : '] || '-',
+                    respondent['Pendidikan Terakhir :'] || '-'
+                ];
+                
+                cells.forEach(cellText => {
+                    const cell = document.createElement('td');
+                    cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                    cell.textContent = cellText;
+                    row.appendChild(cell);
+                });
+                
+                respondentTable.appendChild(row);
+            });
+        }
+        
+        // Initialize with first question
+        setTimeout(() => {
+            if (questionSelect.options.length > 0) {
+                questionSelect.value = questionSelect.options[0].value;
+                updateCharts();
+            }
+        }, 100);
+    </script>
 </body>
 </html>
