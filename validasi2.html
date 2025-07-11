@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Data Survei LPK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-800">Visualisasi Data Survei LPK</h1>
+         <div class="flex justify-center space-x-4">
+            <a href="validasi1.html" class="inline-block bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 text-md font-semibold text-white">
+                Karakteristik Media
+            </a>
+            <a href="validasi2.html" class="inline-block bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 text-md font-semibold text-white">
+                Data Kebutuhan Media
+            </a>
+            <a href="index.html" class="inline-block bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 text-md font-semibold text-white">
+                Home
+            </a>
+       </div>
+        <div class="bg-white p-6 rounded-lg shadow-md my-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Filter Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="questionSelect" class="block text-sm font-medium text-gray-700 mb-1">Pertanyaan</label>
+                    <select id="questionSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                    </select>
+                </div>
+                <div>
+                    <label for="ageGroupSelect" class="block text-sm font-medium text-gray-700 mb-1">Kelompok Umur</label>
+                    <select id="ageGroupSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">Semua Umur</option>
+                        <option value="20-25">20-25 tahun</option>
+                        <option value="26-30">26-30 tahun</option>
+                        <option value="31+">31+ tahun</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Distribusi Jawaban</h2>
+                <div class="h-80"><canvas id="pieChart"></canvas></div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Perbandingan Jawaban</h2>
+                <div class="h-80"><canvas id="barChart"></canvas></div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Demografi Responden</h2>
+            <div class="h-80"><canvas id="ageChart"></canvas></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Daftar Responden</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
+                        </tr>
+                    </thead>
+                    <tbody id="respondentTable" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+const surveyData = [
+  { "Timestamp": "10/07/2025 13:58:36", "Nama": "I gede riantina", "Umur": "31", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Tidak Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Tidak Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Tidak Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "10/07/2025 14:29:18", "Nama": "KADEK SUARDITA", "Umur": "27", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "10/07/2025 14:48:04", "Nama": "Gusti bagus made ari putra", "Umur": "27", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Sangat Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Sangat Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Sangat Setuju" },
+  { "Timestamp": "10/07/2025 15:04:15", "Nama": "Kadek dana yasa", "Umur": "23", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "11/07/2025 11:59:19", "Nama": "I KADEK BUDI DWI ARIAWAN", "Umur": "23", "Batch": "14", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Sangat Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Sangat Setuju" },
+  { "Timestamp": "11/07/2025 12:01:46", "Nama": "Kadek Era Listia Dewi", "Umur": "22 tahun", "Batch": "Batch 14", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Sangat Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Sangat Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "11/07/2025 12:21:08", "Nama": "Putu Alya Sertinia Putri", "Umur": "20", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Tidak Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "11/07/2025 12:23:50", "Nama": "Kadek Irma Dwi Angger", "Umur": "25", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "11/07/2025 12:24:51", "Nama": "I Gust Bagus Putu Ari Sanjaya", "Umur": "27", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Tidak Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" },
+  { "Timestamp": "11/07/2025 12:25:59", "Nama": "Adi Putra", "Umur": "22", "Batch": "15", "1. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis website yg dapat di akses di berbagai device (smartphone, laptop, tablet)": "Setuju", "2. Saya membutuhkan media pembelajaran kosakata bahasa Jepang yang berbasis aplikasi mobile (aplikasi khusus di smartphone).": "Setuju", "3. Saya membutuhkan media pembelajaran yang dapat diakses dari berbagai perangkat (handphone, laptop, tablet) tanpa batasan jenis perangkat.": "Setuju", "4. Saya membutuhkan media pembelajaran yang dapat digunakan tanpa perlu menginstal aplikasi tambahan di perangkat saya.": "Setuju", "5. Saya membutuhkan media pembelajaran yang tidak menghabiskan memori penyimpanan perangkat saya.": "Setuju", "6. Saya membutuhkan media pembelajaran yang dapat langsung digunakan tanpa proses download dan instalasi yang rumit.": "Setuju", "7. Saya membutuhkan media pembelajaran yang dapat diperbarui secara otomatis tanpa perlu update manual dari pengguna.": "Setuju" }
+];
+
+let pieChart, barChart, ageChart;
+
+// DOM elements
+const questionSelect = document.getElementById('questionSelect');
+const ageGroupSelect = document.getElementById('ageGroupSelect');
+// ⭐ SELEKTOR DIPERBAIKI: Langsung menunjuk ke elemen dengan ID
+const respondentTableBody = document.getElementById('respondentTable');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const questions = Object.keys(surveyData[0]).filter(key => key.match(/^\d+\./));
+    questions.forEach(question => {
+        const option = document.createElement('option');
+        option.value = question;
+        option.textContent = question;
+        questionSelect.appendChild(option);
+    });
+    
+    initializeCharts();
+    updateVisuals();
+    
+    questionSelect.addEventListener('change', updateVisuals);
+    ageGroupSelect.addEventListener('change', updateVisuals);
+});
+
+function initializeCharts() {
+    pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'pie', options: { responsive: true, maintainAspectRatio: false } });
+    barChart = new Chart(document.getElementById('barChart').getContext('2d'), { type: 'bar', options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+    ageChart = new Chart(document.getElementById('ageChart').getContext('2d'), { type: 'bar', options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+}
+
+function updateVisuals() {
+    const selectedQuestion = questionSelect.value;
+    const selectedAgeGroup = ageGroupSelect.value;
+    
+    const filteredRespondents = surveyData.filter(respondent => {
+        if (selectedAgeGroup === 'all') return true;
+        const age = parseInt(respondent.Umur) || 0;
+        if (selectedAgeGroup === '20-25') return age >= 20 && age <= 25;
+        if (selectedAgeGroup === '26-30') return age >= 26 && age <= 30;
+        if (selectedAgeGroup === '31+') return age >= 31;
+        return false;
+    });
+    
+    const answerCounts = { 'Sangat Setuju': 0, 'Setuju': 0, 'Tidak Setuju': 0, 'Sangat Tidak Setuju': 0 };
+    filteredRespondents.forEach(respondent => {
+        const answer = respondent[selectedQuestion];
+        if (answer && answerCounts.hasOwnProperty(answer)) {
+            answerCounts[answer]++;
+        }
+    });
+    
+    const chartLabels = Object.keys(answerCounts);
+    const chartData = Object.values(answerCounts);
+    
+    pieChart.data = { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#4ade80', '#a3e635', '#fbbf24', '#f87171'] }] };
+    pieChart.update();
+    
+    barChart.data = { labels: chartLabels, datasets: [{ label: 'Jumlah Jawaban', data: chartData, backgroundColor: '#3b82f6' }] };
+    barChart.update();
+    
+    updateDemographicsChart(surveyData);
+    updateRespondentTable(filteredRespondents);
+}
+
+function updateDemographicsChart(data) {
+    const ageGroups = { '20-25': 0, '26-30': 0, '31+': 0 };
+    data.forEach(respondent => {
+        const age = parseInt(respondent.Umur) || 0;
+        if (age >= 20 && age <= 25) ageGroups['20-25']++;
+        else if (age >= 26 && age <= 30) ageGroups['26-30']++;
+        else if (age >= 31) ageGroups['31+']++;
+    });
+    
+    ageChart.data = { labels: Object.keys(ageGroups), datasets: [{ label: 'Jumlah Responden', data: Object.values(ageGroups), backgroundColor: '#8b5cf6' }] };
+    ageChart.update();
+}
+
+function updateRespondentTable(respondents) {
+    respondentTableBody.innerHTML = ''; // Kosongkan isi tabel
+    
+    respondents.forEach((respondent, index) => {
+        const row = respondentTableBody.insertRow();
+        row.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+        
+        // Buat dan isi sel-sel tabel
+        const cellsData = [
+            index + 1,
+            respondent.Nama,
+            respondent.Umur,
+        ];
+        
+        cellsData.forEach(data => {
+            const cell = row.insertCell();
+            cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+            cell.textContent = data;
+        });
+    });
+}
+</script>
+</body>
+</html>

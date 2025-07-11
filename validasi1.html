@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Data Survei LPK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-800">Visualisasi Data Survei LPK</h1>
+         <div class="flex justify-center">
+         <a href="validasi1.html" class="inline-block mr-5 bg-blue-600 px-1 py-1 lg:px-3 lg:py-3 mb-5 rounded-lg hover:bg-blue-700 text-md font-semibold lg:text-lg text-white">
+            Karakteristik Media
+        </a>
+         <a href="validasi2.html" class="inline-block bg-blue-600 px-1 py-1 lg:px-3 lg:py-3 mb-5 rounded-lg hover:bg-blue-700 text-md font-semibold lg:text-lg text-white">
+            Data Kebutuhan Media
+        </a>
+         <a href="index.html" class="inline-block bg-blue-600 px-1 py-1 lg:px-3 lg:py-3 mb-5 rounded-lg hover:bg-blue-700 text-md font-semibold lg:text-lg text-white">
+            Home
+        </a>
+
+       </div>
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Filter Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pertanyaan</label>
+                    <select id="questionSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <!-- Options will be filled by JavaScript -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kelompok Umur</label>
+                    <select id="ageGroupSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">Semua Umur</option>
+                        <option value="20-25">20-25 tahun</option>
+                        <option value="26-30">26-30 tahun</option>
+                        <option value="31+">31+ tahun</option>
+                    </select>
+                </div>
+                <div class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                    <select id="genderSelect" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">Semua Jenis Kelamin</option>
+                        <option value="Laki-Laki">Laki-Laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Pie Chart -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Distribusi Jawaban</h2>
+                <div class="h-80">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Bar Chart -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Perbandingan Jawaban</h2>
+                <div class="h-80">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Respondent Demographics -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Demografi Responden</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="font-medium text-gray-600 mb-2">Distribusi Umur</h3>
+                    <div class="h-64">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+                <div class="hidden">
+                    <h3 class="font-medium text-gray-600 mb-2">Jenis Kelamin</h3>
+                    <div class="h-64">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+                <div class="hidden">
+                    <h3 class="font-medium text-gray-600 mb-2">Pendidikan Terakhir</h3>
+                    <div class="h-64">
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Respondent Table -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Daftar Responden</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Umur</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Kelamin</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pendidikan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="respondentTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be filled by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Sample data (replace with your actual data fetching logic)
+    const surveyData = [
+
+      {
+        "Timestamp": "04/07/2025 10:25:15",
+        "Nama:": "Putu Pria Sapitri ",
+        "Umur :": "21",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Tidak Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Tidak Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Tidak Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 10:26:19",
+        "Nama:": "I gede riantina",
+        "Umur :": "31",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Tidak Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Tidak Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 10:26:34",
+        "Nama:": "KADEK SUARDITA",
+        "Umur :": "27",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Sangat Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 10:28:05",
+        "Nama:": "Kadek Irma Dwi Anggreni ",
+        "Umur :": "25",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 10:28:31",
+        "Nama:": "Adi putra",
+        "Umur :": "22",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 10:29:36",
+        "Nama:": "Kadek dana yasa",
+        "Umur :": "23",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Tidak Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 11:35:36",
+        "Nama:": "Kadek Budi Ariawan",
+        "Umur :": "23",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Tidak Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Sangat Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Sangat Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Sangat Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Sangat Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Sangat Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Sangat Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Sangat Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Sangat Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Sangat Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Sangat Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Sangat Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Sangat Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Sangat Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Sangat Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Sangat Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Sangat Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Sangat Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 11:39:58",
+        "Nama:": "I Gusti Bagus Putu Ari Sanjaya",
+        "Umur :": "27",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Tidak Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Sangat Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Sangat Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Sangat Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Tidak Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Sangat Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Sangat Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Sangat Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Sangat Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Sangat Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Sangat Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Sangat Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Sangat Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Sangat Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Sangat Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Sangat Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Sangat Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Sangat Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 12:23:02",
+        "Nama:": "Gusti bagus made ari putra",
+        "Umur :": "27 Tahun",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Sangat Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Sangat Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Sangat Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Sangat Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 12:26:43",
+        "Nama:": "Putu Alya Sertinia Putri",
+        "Umur :": "20 Tahun",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Tidak Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju\r"
+      },
+      {
+        "Timestamp": "04/07/2025 12:30:24",
+        "Nama:": "Kadek Era Listia Dewi",
+        "Umur :": "21",
+        "Batch :": "15",
+        "1.  Saya sering lupa terhadap kosakata yang telah saya pelajari sebelumnya ": "Tidak Setuju",
+        "2. Saya mengalami kesulitan dalam menggunakan pola kalimat dari kosakata yg sudah dipelajari": "Tidak Setuju",
+        "3.  Saya perlu belajar kosakata secara berulang-ulang agar tidak lupa ": "Setuju",
+        "4.  Saya mudah lupa kosakata jika tidak diulang setiap hari ": "Setuju",
+        "5.  Saya membutuhkan waktu yang berbeda dengan teman lain untuk mengingat kosakata ": "Tidak Setuju",
+        "6.  Saya membutuhkan media pembelajaran kosakata yg mengakomodasi materi dari Minna no Nihongo": "Sangat Setuju",
+        "7. Penggunaan media flashcard sangat efektif membantu saya mengingat kosakata  ": "Setuju",
+        "8. Saya lebih mudah mengingat kosakata dengan menggunakan media pembelajaran ": "Setuju",
+        "9. Saya membutuhkan media pembelajaran yang dapat digunakan berulang kali ": "Setuju",
+        "10. Saya memerlukan media pembelajaran yang menarik dan interaktif ": "Setuju",
+        "11. Saya ingin media pembelajaran yang dapat diakses kapan saja": "Setuju",
+        "12. Saya pernah mengikuti Pretest dan Posttest dalam pembelajaran": "Setuju",
+        "13. Saya merasa Pretest dan Postest yg pernah dikuti sebelumnya efektif dalam mengukur kemampuan saya": "Setuju",
+        "14. Pretest dan Posttest yang saya ikuti masih kurang efektif ": "Tidak Setuju",
+        "15. Saya ingin mendapat feedback langsung setelah mengerjakan Pretest & Posttest": "Setuju",
+        "16. Saya memerlukan media yang dapat mengukur perkembangan belajar saya ": "Setuju",
+        "17. Saya membutuhkan media yang dapat mengingatkan saya untuk belajar kosakata  ": "Setuju",
+        "18. Saya ingin media yang menyesuaikan dengan kemampuan belajar saya ": "Setuju",
+        "19. Saya membutuhkan latihan pola kalimat yang bervariasi  ": "Sangat Setuju",
+        "20.Saya ingin dapat melihat progress belajar saya dalam media pembelajaran ": "Sangat Setuju",
+        "21.  Saya membutuhkan media yang dapat saya gunakan secara mandiri ": "Setuju",
+        "22 Saya ingin ada kuis singkat di awal dan akhir setiap sesi belajar ": "Setuju",
+        "23 Saya membutuhkan sistem skor untuk melihat perkembangan belajar saya ": "Setuju",
+        "24 Saya ingin ada review kosakata yang pernah saya pelajari sebelumnya ": "Setuju",
+        "25 Saya membutuhkan dashboard yang menampilkan statistik/laporan hasil belajar saya \r": "Setuju"
+      }
+    ];
+
+    // Initialize charts
+    let pieChart, barChart, ageChart, genderChart, educationChart;
+    
+    // DOM elements
+    const questionSelect = document.getElementById('questionSelect');
+    const ageGroupSelect = document.getElementById('ageGroupSelect');
+    const genderSelect = document.getElementById('genderSelect');
+    const respondentTable = document.getElementById('respondentTable');
+    
+    // Process data and initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Populate question dropdown
+        const firstRespondent = surveyData[0];
+        const questions = Object.keys(firstRespondent).filter(key => 
+            key.match(/^\d+\./) || key.startsWith('"') || key.startsWith(' ')
+        );
+        
+        questions.forEach((question, index) => {
+            const option = document.createElement('option');
+            option.value = question;
+            option.textContent = question.replace(/"/g, '').trim();
+            questionSelect.appendChild(option);
+        });
+        
+        // Initialize charts
+        initializeCharts();
+        updateRespondentTable();
+        
+        // Add event listeners for filters
+        questionSelect.addEventListener('change', updateCharts);
+        ageGroupSelect.addEventListener('change', updateCharts);
+        genderSelect.addEventListener('change', updateCharts);
+    });
+    
+    function initializeCharts() {
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        const ageCtx = document.getElementById('ageChart').getContext('2d');
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        const educationCtx = document.getElementById('educationChart').getContext('2d');
+        
+        // Initialize with empty data (will be updated)
+        pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        
+        barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+        
+        // Demographics charts
+        updateDemographicsCharts();
+    }
+    
+    function updateCharts() {
+        const selectedQuestion = questionSelect.value;
+        const ageGroup = ageGroupSelect.value;
+        const gender = genderSelect.value;
+        
+        // Filter respondents based on age and gender
+        const filteredRespondents = surveyData.filter(respondent => {
+            // Age filter
+            let ageMatch = true;
+            if (ageGroup !== 'all') {
+                const age = parseInt(respondent['Umur :']) || 0;
+                if (ageGroup === '20-25') ageMatch = age >= 20 && age <= 25;
+                else if (ageGroup === '26-30') ageMatch = age >= 26 && age <= 30;
+                else if (ageGroup === '31+') ageMatch = age >= 31;
+            }
+            
+            // Gender filter
+            const genderMatch = gender === 'all' || respondent['Jenis Kelamin :'] === gender;
+            
+            return ageMatch && genderMatch;
+        });
+        
+        // Count answers for the selected question
+        const answerCounts = {
+            'Sangat Setuju': 0,
+            'Setuju': 0,
+            'Tidak Setuju': 0,
+            'Sangat Tidak Setuju': 0
+        };
+        
+        filteredRespondents.forEach(respondent => {
+            const answer = respondent[selectedQuestion];
+            if (answer && answerCounts.hasOwnProperty(answer)) {
+                answerCounts[answer]++;
+            }
+        });
+        
+        // Update pie chart
+        pieChart.data.labels = Object.keys(answerCounts);
+        pieChart.data.datasets[0].data = Object.values(answerCounts);
+        pieChart.data.datasets[0].backgroundColor = [
+            '#4ade80', // green for sangat setuju
+            '#a3e635', // lime for setuju
+            '#fbbf24', // amber for tidak setuju
+            '#f87171'  // red for sangat tidak setuju
+        ];
+        pieChart.update();
+        
+        // Update bar chart (could show comparison by gender or age group)
+        // For simplicity, we'll just show the same data as bar chart
+        barChart.data.labels = Object.keys(answerCounts);
+        barChart.data.datasets = [{
+            label: 'Jumlah Responden',
+            data: Object.values(answerCounts),
+            backgroundColor: '#3b82f6',
+            borderColor: '#1d4ed8',
+            borderWidth: 1
+        }];
+        barChart.update();
+        
+        // Update respondent table
+        updateRespondentTable(filteredRespondents);
+    }
+    
+    function updateDemographicsCharts() {
+        const respondents = surveyData;
+        
+        // Age distribution
+        const ageGroups = {
+            '20-25': 0,
+            '26-30': 0,
+            '31+': 0
+        };
+        
+        respondents.forEach(respondent => {
+            const age = parseInt(respondent['Umur :']) || 0;
+            if (age >= 20 && age <= 25) ageGroups['20-25']++;
+            else if (age >= 26 && age <= 30) ageGroups['26-30']++;
+            else if (age >= 31) ageGroups['31+']++;
+        });
+        
+        if (ageChart) {
+            ageChart.data.labels = Object.keys(ageGroups);
+            ageChart.data.datasets = [{
+                label: 'Jumlah Responden',
+                data: Object.values(ageGroups),
+                backgroundColor: '#6366f1',
+                borderColor: '#4f46e5',
+                borderWidth: 1
+            }];
+            ageChart.update();
+        } else {
+            const ageCtx = document.getElementById('ageChart').getContext('2d');
+            ageChart = new Chart(ageCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(ageGroups),
+                    datasets: [{
+                        label: 'Jumlah Responden',
+                        data: Object.values(ageGroups),
+                        backgroundColor: '#6366f1',
+                        borderColor: '#4f46e5',
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+        
+        // Gender distribution
+        const genderCounts = {
+            'Laki-Laki': 0,
+            'Perempuan': 0
+        };
+        
+        respondents.forEach(respondent => {
+            const gender = respondent['Jenis Kelamin :'];
+            if (gender && genderCounts.hasOwnProperty(gender)) {
+                genderCounts[gender]++;
+            }
+        });
+        
+        if (genderChart) {
+            genderChart.data.labels = Object.keys(genderCounts);
+            genderChart.data.datasets[0].data = Object.values(genderCounts);
+            genderChart.data.datasets[0].backgroundColor = ['#60a5fa', '#f472b6'];
+            genderChart.update();
+        } else {
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            genderChart = new Chart(genderCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(genderCounts),
+                    datasets: [{
+                        data: Object.values(genderCounts),
+                        backgroundColor: ['#60a5fa', '#f472b6']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        
+        // Education distribution
+        const educationCounts = {};
+        
+        respondents.forEach(respondent => {
+            const education = respondent['Pendidikan Terakhir :'];
+            if (education) {
+                educationCounts[education] = (educationCounts[education] || 0) + 1;
+            }
+        });
+        
+        if (educationChart) {
+            educationChart.data.labels = Object.keys(educationCounts);
+            educationChart.data.datasets[0].data = Object.values(educationCounts);
+            educationChart.update();
+        } else {
+            const educationCtx = document.getElementById('educationChart').getContext('2d');
+            educationChart = new Chart(educationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(educationCounts),
+                    datasets: [{
+                        data: Object.values(educationCounts),
+                        backgroundColor: [
+                            '#f59e0b',
+                            '#10b981',
+                            '#3b82f6',
+                            '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+    
+    function updateRespondentTable(filteredRespondents = null) {
+        const respondents = filteredRespondents || surveyData;
+        
+        // Clear existing rows
+        respondentTable.innerHTML = '';
+        
+        // Add new rows
+        respondents.forEach((respondent, index) => {
+            const row = document.createElement('tr');
+            row.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+            
+            // Handle different name field formats
+            const name = respondent['Nama:'] || respondent['Nama Lengkap:'] || '-';
+            const age = respondent['Umur :'] || '-';
+            const gender = respondent['Jenis Kelamin :'] || '-';
+            const education = respondent['Pendidikan Terakhir :'] || '-';
+            
+            const cells = [
+                index + 1,
+                name,
+                age,
+                gender,
+                education
+            ];
+            
+            cells.forEach(cellText => {
+                const cell = document.createElement('td');
+                cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                cell.textContent = cellText;
+                row.appendChild(cell);
+            });
+            
+            respondentTable.appendChild(row);
+        });
+    }
+    
+    // Initialize with first question
+    setTimeout(() => {
+        if (questionSelect.options.length > 0) {
+            questionSelect.value = questionSelect.options[0].value;
+            updateCharts();
+        }
+    }, 100);
+</script>
+</body>
+</html>
